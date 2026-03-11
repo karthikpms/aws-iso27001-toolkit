@@ -1,0 +1,134 @@
+{
+  "_metadata": {
+    "description": "Defines required tags per AWS resource type for ISO 27001 asset inventory compliance",
+    "version": "1.0.0",
+    "framework": "ISO 27001:2022",
+    "last_updated": "2026-03-11",
+    "annex_a_controls": ["A.5.9", "A.5.12", "A.8.1", "A.8.9"]
+  },
+
+  "global_required_tags": ["Owner", "Classification", "Environment"],
+
+  "resource_type_overrides": {
+    "ec2:instance": {
+      "required_tags": ["Owner", "Classification", "Environment", "Name", "Application"],
+      "severity": "high",
+      "description": "EC2 instances must be tagged for ownership tracking, data classification, and application mapping"
+    },
+    "ec2:volume": {
+      "required_tags": ["Owner", "Classification", "Environment"],
+      "severity": "medium",
+      "description": "EBS volumes must be tagged for data classification and lifecycle management"
+    },
+    "ec2:snapshot": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "EBS snapshots should be tagged for ownership and retention tracking"
+    },
+    "ec2:image": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "AMIs should be tagged for ownership tracking"
+    },
+    "ec2:elastic-ip": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "Elastic IPs should be tagged to identify allocation purpose"
+    },
+    "s3:bucket": {
+      "required_tags": ["Owner", "Classification", "Environment"],
+      "severity": "high",
+      "description": "S3 buckets must be tagged for data classification and access governance"
+    },
+    "rds:db-instance": {
+      "required_tags": ["Owner", "Classification", "Environment", "Application"],
+      "severity": "high",
+      "description": "RDS instances must be tagged for data classification and ownership"
+    },
+    "rds:cluster": {
+      "required_tags": ["Owner", "Classification", "Environment", "Application"],
+      "severity": "high",
+      "description": "RDS clusters must be tagged for data classification and ownership"
+    },
+    "lambda:function": {
+      "required_tags": ["Owner", "Environment", "Application"],
+      "severity": "medium",
+      "description": "Lambda functions must be tagged for ownership and lifecycle management"
+    },
+    "iam:user": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "high",
+      "description": "IAM users must be tagged for access governance and periodic reviews"
+    },
+    "iam:role": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "medium",
+      "description": "IAM roles should be tagged for access governance"
+    },
+    "ec2:vpc": {
+      "required_tags": ["Owner", "Environment", "Name"],
+      "severity": "medium",
+      "description": "VPCs must be tagged for network segmentation tracking"
+    },
+    "ec2:subnet": {
+      "required_tags": ["Owner", "Environment", "Name"],
+      "severity": "low",
+      "description": "Subnets should be tagged for network documentation"
+    },
+    "ec2:security-group": {
+      "required_tags": ["Owner", "Environment", "Name"],
+      "severity": "medium",
+      "description": "Security groups must be tagged for firewall rule governance"
+    },
+    "ecs:cluster": {
+      "required_tags": ["Owner", "Classification", "Environment"],
+      "severity": "medium",
+      "description": "ECS clusters must be tagged for workload tracking"
+    },
+    "eks:cluster": {
+      "required_tags": ["Owner", "Classification", "Environment"],
+      "severity": "high",
+      "description": "EKS clusters must be tagged for workload and data classification"
+    },
+    "route53:hostedzone": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "Route 53 hosted zones should be tagged for DNS governance"
+    },
+    "cloudfront:distribution": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "medium",
+      "description": "CloudFront distributions should be tagged for content delivery governance"
+    },
+    "sns:topic": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "SNS topics should be tagged for messaging governance"
+    },
+    "sqs:queue": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "low",
+      "description": "SQS queues should be tagged for messaging governance"
+    },
+    "secretsmanager:secret": {
+      "required_tags": ["Owner", "Classification", "Environment"],
+      "severity": "high",
+      "description": "Secrets must be tagged for data classification and access governance"
+    },
+    "kms:key": {
+      "required_tags": ["Owner", "Environment"],
+      "severity": "medium",
+      "description": "KMS keys should be tagged for cryptographic key governance"
+    }
+  },
+
+  "classification_values": ["public", "internal", "confidential", "restricted"],
+  "environment_values": ["production", "staging", "development", "shared"],
+
+  "annex_a_controls": {
+    "A.5.9":  "Inventory of Information and Other Associated Assets",
+    "A.5.12": "Classification of Information",
+    "A.8.1":  "User Endpoint Devices",
+    "A.8.9":  "Configuration Management"
+  }
+}

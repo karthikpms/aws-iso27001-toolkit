@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Access Review Report &mdash; {{ report_date }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; line-height: 1.5; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.25rem; }
+  .subtitle { color: #6b7280; margin-bottom: 1.5rem; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .summary-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
+  .summary-card .value { font-size: 1.75rem; font-weight: 700; }
+  .summary-card .label { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .severity-critical { color: #991b1b; }
+  .severity-high { color: #c2410c; }
+  .severity-medium { color: #a16207; }
+  .severity-low { color: #4d7c0f; }
+  .badge { display: inline-block; padding: 0.15em 0.5em; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .badge-critical { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .badge-high { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .badge-medium { background: #fefce8; color: #a16207; border: 1px solid #fef08a; }
+  .badge-low { background: #f0fdf4; color: #4d7c0f; border: 1px solid #bbf7d0; }
+  .badge-pass { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .badge-fail { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.875rem; }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+  th { background: #f9fafb; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #374151; }
+  tr:hover { background: #f3f4f6; }
+  .root-section { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+  .root-section h3 { color: #991b1b; margin-bottom: 0.5rem; font-size: 1rem; }
+  .config-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #0c4a6e; }
+  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; font-size: 0.8rem; color: #9ca3af; }
+  @media print { body { padding: 1rem; } .summary-card { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>IAM Access Review Report</h1>
+<p class="subtitle">Generated {{ report_date }} &mdash; ISO 27001 Controls: A.5.15, A.5.18, A.8.2</p>
+
+<div class="config-note">
+  <strong>Review thresholds:</strong>
+  Access key max age: {{ max_key_age_days }} days &bull;
+  Unused key max: {{ max_unused_key_days }} days &bull;
+  Inactive console max: {{ max_inactive_console_days }} days
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">{{ total_users }}</div>
+    <div class="label">IAM Users</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ users_with_issues }}</div>
+    <div class="label">Users with Issues</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ total_findings }}</div>
+    <div class="label">Total Findings</div>
+  </div>
+  <div class="summary-card">
+    <div class="value severity-critical">{{ severity_counts.critical }}</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="summary-card">
+    <div class="value severity-high">{{ severity_counts.high }}</div>
+    <div class="label">High</div>
+  </div>
+  <div class="summary-card">
+    <div class="value severity-medium">{{ severity_counts.medium }}</div>
+    <div class="label">Medium</div>
+  </div>
+  <div class="summary-card">
+    <div class="value severity-low">{{ severity_counts.low }}</div>
+    <div class="label">Low</div>
+  </div>
+</div>
+
+<!-- Root Account -->
+{% if root_summary %}
+<div class="root-section">
+  <h3>Root Account Status</h3>
+  <p>
+    MFA:
+    {% if root_summary.mfa_active %}
+      <span class="badge badge-pass">Enabled</span>
+    {% else %}
+      <span class="badge badge-fail">Not Enabled</span>
+    {% endif %}
+    &nbsp;&nbsp;
+    Access Keys:
+    {% if root_summary.access_key_1_active or root_summary.access_key_2_active %}
+      <span class="badge badge-fail">Active keys present</span>
+    {% else %}
+      <span class="badge badge-pass">No active keys</span>
+    {% endif %}
+  </p>
+  {% if root_summary.issues %}
+  <p style="margin-top:0.5rem;"><strong>Issues:</strong> {{ root_summary.issues | join(', ') }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- User Summary Table -->
+<h2>User Accounts</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>MFA</th>
+      <th>Console</th>
+      <th>Key 1</th>
+      <th>Key 2</th>
+      <th>Issues</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in user_summaries %}
+    <tr>
+      <td><strong>{{ user.username }}</strong></td>
+      <td>
+        {% if user.password_enabled %}
+          {% if user.mfa_active %}
+            <span class="badge badge-pass">Yes</span>
+          {% else %}
+            <span class="badge badge-fail">No</span>
+          {% endif %}
+        {% else %}
+          <span style="color:#9ca3af;">N/A</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if user.password_enabled %}
+          {% if user.console_inactive_days is defined and user.console_inactive_days is not none %}
+            {{ user.console_inactive_days }}d ago
+          {% else %}
+            Active
+          {% endif %}
+        {% else %}
+          <span style="color:#9ca3af;">Disabled</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if user.access_key_1_active %}
+          {% if user.key_1_age_days is defined and user.key_1_age_days is not none %}
+            {{ user.key_1_age_days }}d old
+          {% else %}
+            Active
+          {% endif %}
+        {% else %}
+          <span style="color:#9ca3af;">-</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if user.access_key_2_active %}
+          {% if user.key_2_age_days is defined and user.key_2_age_days is not none %}
+            {{ user.key_2_age_days }}d old
+          {% else %}
+            Active
+          {% endif %}
+        {% else %}
+          <span style="color:#9ca3af;">-</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if user.issues %}
+          {% for issue in user.issues %}
+            <span class="badge badge-fail">{{ issue }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="badge badge-pass">Clean</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- User Findings -->
+{% if user_findings %}
+<h2>User Findings ({{ user_findings | length }})</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Finding</th>
+      <th>Resource</th>
+      <th>Controls</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in user_findings %}
+    <tr>
+      <td><span class="badge badge-{{ f.severity }}">{{ f.severity }}</span></td>
+      <td>{{ f.title }}</td>
+      <td style="font-size:0.8rem; word-break:break-all;">{{ f.resource_arn }}</td>
+      <td style="font-size:0.8rem;">{{ f.iso_controls | join(', ') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- Role Findings -->
+{% if role_findings %}
+<h2>Role Findings ({{ role_findings | length }})</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Finding</th>
+      <th>Resource</th>
+      <th>Controls</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in role_findings %}
+    <tr>
+      <td><span class="badge badge-{{ f.severity }}">{{ f.severity }}</span></td>
+      <td>{{ f.title }}</td>
+      <td style="font-size:0.8rem; word-break:break-all;">{{ f.resource_arn }}</td>
+      <td style="font-size:0.8rem;">{{ f.iso_controls | join(', ') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="footer">
+  <p>
+    This report requires manual review and sign-off by the security team.
+    Findings have been automatically logged in CISO Assistant.
+  </p>
+  <p>Generated by AWS ISO 27001 Toolkit &mdash; Pyramidions</p>
+</div>
+
+</body>
+</html>

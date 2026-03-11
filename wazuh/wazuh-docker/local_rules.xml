@@ -1,0 +1,49 @@
+<!-- Custom Wazuh rules for ISO 27001 Toolkit -->
+<!-- These are loaded in addition to the default Wazuh rules -->
+
+<group name="local,iso27001,">
+
+  <!-- ================================================================== -->
+  <!-- Alert enrichment: tag ISO 27001-relevant alerts for forwarding     -->
+  <!-- ================================================================== -->
+
+  <!-- FIM: critical config file changes (level 10+) -->
+  <rule id="100001" level="10">
+    <if_group>syscheck</if_group>
+    <match>/etc/passwd|/etc/shadow|/etc/sudoers|/etc/ssh/sshd_config</match>
+    <description>ISO27001-A.8.9: Critical system file modified — $(syscheck.path)</description>
+    <group>iso27001,fim_critical,</group>
+  </rule>
+
+  <!-- Multiple auth failures: potential brute-force (level 10) -->
+  <rule id="100002" level="10" frequency="6" timeframe="120">
+    <if_matched_group>authentication_failed</if_matched_group>
+    <description>ISO27001-A.5.17: Multiple authentication failures from same source</description>
+    <group>iso27001,brute_force,</group>
+  </rule>
+
+  <!-- Docker container started/stopped on toolkit host -->
+  <rule id="100003" level="5">
+    <if_group>docker</if_group>
+    <match>container_</match>
+    <description>ISO27001-A.8.9: Docker container state change detected</description>
+    <group>iso27001,docker,</group>
+  </rule>
+
+  <!-- AWS CloudTrail: root account usage -->
+  <rule id="100004" level="12">
+    <if_group>aws</if_group>
+    <match>Root</match>
+    <field name="aws.userIdentity.type">Root</field>
+    <description>ISO27001-A.5.18: AWS root account usage detected</description>
+    <group>iso27001,aws_root,</group>
+  </rule>
+
+  <!-- Vulnerability detected with high CVSS -->
+  <rule id="100005" level="10">
+    <if_group>vulnerability-detector</if_group>
+    <description>ISO27001-A.8.8: Vulnerability detected — $(vulnerability.cve)</description>
+    <group>iso27001,vulnerability,</group>
+  </rule>
+
+</group>

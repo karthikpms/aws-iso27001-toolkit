@@ -1,0 +1,110 @@
+PROPOSAL: AWS ISO 27001 Infrastructure Readiness Toolkit
+=========================================================
+
+Proposal ID    : [To be assigned]
+Submitted By   : Pyramidions
+Date           : March 10, 2026
+Status         : Pending Approval
+
+---------------------------------------------------------
+1. OBJECTIVE
+---------------------------------------------------------
+Deploy an internal toolkit that continuously scans Pyramidions' AWS
+infrastructure against ISO 27001 (Annex A) and SOC 2 controls, tracks
+compliance posture over time, and generates actionable remediation
+recommendations. The toolkit also serves as a centralized ISMS tracker
+for non-infrastructure requirements (policy management, vendor
+assessments, incident tracking, asset inventory, HR controls).
+
+---------------------------------------------------------
+2. PROPOSED SOLUTION
+---------------------------------------------------------
+An open-source stack consisting of:
+
+  - Prowler       : Automated AWS security scanning against ISO 27001/SOC 2
+  - CISO Assistant: GRC platform for compliance tracking and evidence management
+  - Wazuh         : Host-level intrusion detection, FIM, and SIEM
+  - Glue Layer    : Custom Python integration pipeline connecting the above
+
+All components are containerized (Docker Compose) and deployed on a
+single EC2 t3.large instance in our AWS account.
+
+---------------------------------------------------------
+3. SCOPE
+---------------------------------------------------------
+Automated scanning covers:
+  - IAM, S3, EC2/VPC, CloudTrail, RDS, KMS, Lambda, ECS/EKS,
+    GuardDuty, AWS Config
+
+Manual ISMS tracking covers:
+  - Policy management (A.5.1)
+  - Vendor / third-party risk (A.5.19 - A.5.22)
+  - HR & people controls (A.6.1 - A.6.8)
+  - Incident management (A.5.24 - A.5.28)
+  - Asset management (A.5.9 - A.5.14)
+  - Business continuity (A.5.29 - A.5.30)
+
+---------------------------------------------------------
+4. IMPLEMENTATION TIMELINE
+---------------------------------------------------------
+Phase 1 (Week 1-2): Core Infrastructure
+  - Terraform module, Docker Compose, Prowler scanning, secrets management
+
+Phase 2 (Week 3-4): GRC Integration
+  - CISO Assistant deployment, Glue Layer, finding import pipeline
+
+Phase 3 (Week 5-6): Monitoring
+  - Wazuh deployment, agent installation, alert forwarding
+
+Phase 4 (Week 7-8): Alerting & Operations
+  - SNS/Slack alerting, backup automation, health checks
+
+---------------------------------------------------------
+5. ESTIMATED COST
+---------------------------------------------------------
+Monthly recurring: ~$75-80/month
+  - EC2 t3.large (on-demand): ~$60
+  - EBS storage + snapshots:   ~$9
+  - Secrets Manager + SNS:     ~$4
+  - Data transfer:             ~$2-5
+
+All software components are open source (zero licensing cost).
+Reducible to ~$50/month with a 1-year Reserved Instance.
+
+---------------------------------------------------------
+6. KEY SECURITY CONTROLS
+---------------------------------------------------------
+  - Prowler runs with read-only IAM role (no write permissions)
+  - CISO Assistant accessible only via VPN/SSH tunnel (not public)
+  - All data encrypted in transit (TLS 1.2+) and at rest (AWS KMS)
+  - Secrets stored in AWS Secrets Manager, injected at runtime to tmpfs
+  - No secrets committed to Git or written to persistent disk
+
+---------------------------------------------------------
+7. BACKUP & DISASTER RECOVERY
+---------------------------------------------------------
+  - Daily automated EBS snapshots (7 daily + 4 weekly retained)
+  - Nightly CISO Assistant data export to S3 (Glacier after 90 days)
+  - Recovery time: 15-30 minutes depending on failure scenario
+
+---------------------------------------------------------
+8. EXPECTED OUTCOMES
+---------------------------------------------------------
+  - Continuous visibility into ISO 27001 compliance posture
+  - Automated detection of security misconfigurations
+  - Centralized evidence repository for audit readiness
+  - Single-pane-of-glass view across technical and non-technical controls
+  - Alerting on critical/high findings via Slack and email
+
+---------------------------------------------------------
+9. APPROVAL
+---------------------------------------------------------
+Approved By  : ____________________________
+Title        : ____________________________
+Date         : ____________________________
+Signature    : ____________________________
+
+Comments:
+_______________________________________________________________
+_______________________________________________________________
+_______________________________________________________________

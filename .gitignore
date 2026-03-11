@@ -1,0 +1,48 @@
+# Secrets
+.env
+secrets/
+*.pem
+*.key
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Prowler output (can be large)
+output/
+
+# Wazuh data
+wazuh/wazuh-docker/data/
+
+# CISO Assistant local DB
+db/
+
+# Docker volumes data
+volumes/
+
+# Screenshots
+*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# IDE / local tooling
+.vscode/
+.idea/
+.claude/
+.playwright-mcp/
+
+# Glue layer cache
+glue/*.db

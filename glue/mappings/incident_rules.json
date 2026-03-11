@@ -1,0 +1,124 @@
+{
+  "_metadata": {
+    "description": "Incident auto-detection rules for GuardDuty, CloudTrail, and SecurityHub",
+    "version": "1.0.0",
+    "framework": "ISO 27001:2022",
+    "last_updated": "2026-03-11"
+  },
+
+  "guardduty": {
+    "severity_mapping": {
+      "8.0_to_10.0": "critical",
+      "7.0_to_7.9":  "critical",
+      "4.0_to_6.9":  "high",
+      "1.0_to_3.9":  "medium",
+      "0.0_to_0.9":  "low"
+    },
+    "escalation": {
+      "immediate_threshold": 7.0,
+      "alert_within_run_threshold": 4.0
+    },
+    "iso_controls": {
+      "default": ["A.5.24", "A.5.25", "A.5.26", "A.5.28"],
+      "type_overrides": {
+        "Recon": ["A.5.24", "A.5.28", "A.8.16"],
+        "UnauthorizedAccess": ["A.5.24", "A.5.25", "A.5.26", "A.8.2"],
+        "Trojan": ["A.5.24", "A.5.25", "A.5.26", "A.8.7"],
+        "CryptoCurrency": ["A.5.24", "A.5.25", "A.8.7"],
+        "Exfiltration": ["A.5.24", "A.5.25", "A.5.26", "A.8.12"],
+        "Backdoor": ["A.5.24", "A.5.25", "A.5.26", "A.8.7"],
+        "PenTest": ["A.5.24", "A.5.28"],
+        "Persistence": ["A.5.24", "A.5.25", "A.5.26", "A.8.2"],
+        "PrivilegeEscalation": ["A.5.24", "A.5.25", "A.5.15", "A.8.2"],
+        "Impact": ["A.5.24", "A.5.25", "A.5.26", "A.5.29"],
+        "CredentialAccess": ["A.5.24", "A.5.25", "A.5.17", "A.8.5"],
+        "DefenseEvasion": ["A.5.24", "A.5.25", "A.8.15", "A.8.16"]
+      }
+    }
+  },
+
+  "cloudtrail": {
+    "monitored_events": {
+      "ConsoleLogin": {
+        "description": "Root account console login detected",
+        "filter": "root_only",
+        "severity": "critical",
+        "iso_controls": ["A.5.24", "A.5.15", "A.8.15"]
+      },
+      "StopLogging": {
+        "description": "CloudTrail logging stopped — potential audit trail tampering",
+        "filter": "always",
+        "severity": "critical",
+        "iso_controls": ["A.5.24", "A.8.15", "A.8.16"]
+      },
+      "DeleteTrail": {
+        "description": "CloudTrail trail deleted — audit trail tampering",
+        "filter": "always",
+        "severity": "critical",
+        "iso_controls": ["A.5.24", "A.8.15", "A.8.16"]
+      },
+      "CreateUser": {
+        "description": "New IAM user created — review for authorization",
+        "filter": "always",
+        "severity": "medium",
+        "iso_controls": ["A.5.24", "A.5.15", "A.5.18"]
+      },
+      "AttachUserPolicy": {
+        "description": "IAM policy attached to user — check for privilege escalation",
+        "filter": "admin_access",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.5.15", "A.8.2"]
+      },
+      "AttachRolePolicy": {
+        "description": "IAM policy attached to role — check for privilege escalation",
+        "filter": "admin_access",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.5.15", "A.8.2"]
+      },
+      "PutBucketPolicy": {
+        "description": "S3 bucket policy changed — check for public access",
+        "filter": "public_access",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.8.10", "A.8.3"]
+      },
+      "AuthorizeSecurityGroupIngress": {
+        "description": "Security group ingress rule added — check for open access",
+        "filter": "open_access",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.8.20", "A.8.21"]
+      },
+      "DeleteBucketEncryption": {
+        "description": "S3 bucket encryption removed",
+        "filter": "always",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.8.24"]
+      },
+      "DisableKey": {
+        "description": "KMS key disabled — potential data access disruption",
+        "filter": "always",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.8.24"]
+      },
+      "PutBucketPublicAccessBlock": {
+        "description": "S3 public access block configuration changed",
+        "filter": "disabled_block",
+        "severity": "high",
+        "iso_controls": ["A.5.24", "A.8.10"]
+      }
+    },
+    "sensitive_ports": [22, 3389, 3306, 5432, 1433, 6379, 27017, 9200]
+  },
+
+  "securityhub": {
+    "min_severity": "CRITICAL",
+    "severity_filter": ["CRITICAL", "HIGH"],
+    "iso_controls_by_type": {
+      "Software and Configuration Checks": ["A.5.24", "A.8.9"],
+      "TTPs": ["A.5.24", "A.5.25", "A.5.26"],
+      "Effects": ["A.5.24", "A.5.25", "A.5.26"],
+      "Unusual Behaviors": ["A.5.24", "A.5.28", "A.8.16"],
+      "Sensitive Data Identifications": ["A.5.24", "A.8.10", "A.8.11"]
+    },
+    "default_iso_controls": ["A.5.24", "A.5.25"]
+  }
+}

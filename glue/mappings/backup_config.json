@@ -1,0 +1,58 @@
+{
+  "iso_controls": ["A.8.13", "A.8.14"],
+  "thresholds": {
+    "ebs_snapshot_max_age_hours": 25,
+    "s3_export_max_age_hours": 25,
+    "rds_backup_max_age_hours": 25
+  },
+  "checks": {
+    "rds_backups": {
+      "enabled": true,
+      "severity": "critical",
+      "min_retention_days": 7,
+      "description": "Verify RDS automated backups are enabled and within retention window"
+    },
+    "ebs_snapshots": {
+      "enabled": true,
+      "severity": "critical",
+      "description": "Verify EBS snapshots exist and are recent"
+    },
+    "s3_versioning": {
+      "enabled": true,
+      "severity": "high",
+      "critical_bucket_patterns": [
+        ".*backup.*",
+        ".*ciso.*",
+        ".*iso27001.*"
+      ],
+      "description": "Verify S3 versioning is enabled on critical buckets"
+    },
+    "s3_export": {
+      "enabled": true,
+      "severity": "high",
+      "bucket_env_var": "BACKUP_S3_BUCKET",
+      "export_prefix": "ciso-export/",
+      "description": "Verify CISO Assistant nightly export exists in S3"
+    }
+  },
+  "restore_tests": {
+    "rds": {
+      "enabled": true,
+      "temp_instance_class": "db.t3.micro",
+      "temp_instance_prefix": "iso27001-restore-test-",
+      "timeout_minutes": 30,
+      "description": "Restore latest RDS snapshot to temp instance, verify connectivity, tear down"
+    },
+    "ebs": {
+      "enabled": true,
+      "temp_volume_prefix": "iso27001-restore-test-",
+      "timeout_minutes": 15,
+      "description": "Create volume from latest EBS snapshot, verify, tear down"
+    }
+  },
+  "cleanup": {
+    "tag_key": "Purpose",
+    "tag_value": "iso27001-restore-test",
+    "max_age_hours": 2
+  }
+}

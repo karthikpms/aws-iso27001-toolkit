@@ -1,0 +1,276 @@
+services:
+  # ============================================================
+  # PROWLER — Cloud Security Scanner (on-demand)
+  # ============================================================
+  prowler:
+    image: prowlercloud/prowler:5.5.0
+    platform: linux/amd64
+    container_name: prowler
+    profiles: ["scan"]
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-ap-south-1}
+    volumes:
+      - prowler-output:/home/prowler/output
+      - ${HOME}/.aws:/home/prowler/.aws:ro
+    command:
+      - "aws"
+      - "--compliance"
+      - "iso27001_2013_aws"
+      - "-M"
+      - "json-ocsf"
+      - "--output-directory"
+      - "/home/prowler/output"
+    networks:
+      - toolkit-net
+
+  # ============================================================
+  # CISO ASSISTANT — GRC Platform
+  # ============================================================
+  ciso-db:
+    image: postgres:16-alpine
+    container_name: ciso-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ciso_assistant
+      POSTGRES_USER: ciso
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - ciso-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ciso -d ciso_assistant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - toolkit-net
+
+  ciso-backend:
+    image: ghcr.io/intuitem/ciso-assistant-community/backend:latest
+    container_name: ciso-backend
+    restart: unless-stopped
+    depends_on:
+      ciso-db:
+        condition: service_healthy
+    environment:
+      DJANGO_DEBUG: "False"
+      ALLOWED_HOSTS: "*"
+      CISO_ASSISTANT_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+      DB_HOST: ciso-db
+      DB_PORT: "5432"
+      POSTGRES_NAME: ciso_assistant
+      POSTGRES_USER: ciso
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      DEFAULT_FROM_EMAIL: "ciso@pyramidions.com"
+      CISO_SUPERUSER_EMAIL: "${CISO_ADMIN_EMAIL:-admin@pyramidions.com}"
+      DJANGO_SUPERUSER_PASSWORD: "${CISO_ADMIN_PASSWORD:-changeme}"
+    volumes:
+      - ciso-backend-data:/code/db
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/iam/login/ -o /dev/null -w '%{http_code}' | grep -qE '(200|405|401)' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - toolkit-net
+
+  ciso-frontend:
+    image: ghcr.io/intuitem/ciso-assistant-community/frontend:latest
+    container_name: ciso-frontend
+    restart: unless-stopped
+    depends_on:
+      ciso-backend:
+        condition: service_healthy
+    environment:
+      PUBLIC_BACKEND_API_URL: "http://ciso-backend:8000/api"
+      PUBLIC_BACKEND_API_EXPOSED_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}/api"
+      PROTOCOL_HEADER: "x-forwarded-proto"
+      HOST_HEADER: "x-forwarded-host"
+      ORIGIN: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+    ports:
+      - "${CISO_ASSISTANT_PORT:-8443}:3000"
+    networks:
+      - toolkit-net
+
+  # ============================================================
+  # GLUE LAYER — Prowler Mapper (on-demand)
+  # ============================================================
+  glue-mapper:
+    build: ./glue
+    container_name: glue-mapper
+    profiles: ["scan"]
+    depends_on:
+      ciso-backend:
+        condition: service_healthy
+    environment:
+      CISO_ASSISTANT_URL: "http://ciso-backend:8000"
+      CISO_ADMIN_EMAIL: "${CISO_ADMIN_EMAIL:-admin@pyramidions.com}"
+      CISO_ADMIN_PASSWORD: "${CISO_ADMIN_PASSWORD:-changeme}"
+      CISO_PROJECT_NAME: "AWS ISO 27001 Toolkit"
+      PROWLER_OUTPUT_DIR: "/home/prowler/output"
+      DEDUP_DB_PATH: "/data/glue/dedup_cache.db"
+      SCAN_SUMMARY_PATH: "/data/glue/last_scan_summary.json"
+      LOG_LEVEL: "${GLUE_LOG_LEVEL:-INFO}"
+      # Alerting (email via SNS)
+      ALERT_ENABLED: "${ALERT_ENABLED:-true}"
+      ALERT_MIN_SEVERITY: "${ALERT_MIN_SEVERITY:-medium}"
+      SNS_TOPIC_ARN: "${SNS_TOPIC_ARN:-}"
+      AWS_REGION: "${AWS_REGION:-ap-south-1}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
+      AWS_SESSION_TOKEN: "${AWS_SESSION_TOKEN:-}"
+      CISO_DASHBOARD_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+    volumes:
+      - prowler-output:/home/prowler/output:ro
+      - glue-data:/data/glue
+      - ${HOME}/.aws:/root/.aws:ro
+    networks:
+      - toolkit-net
+
+  # ============================================================
+  # GLUE LAYER — Wazuh Webhook Receiver (always-on)
+  # ============================================================
+  glue-webhook:
+    build: ./glue
+    container_name: glue-webhook
+    restart: unless-stopped
+    entrypoint: ["python", "webhook_server.py"]
+    depends_on:
+      ciso-backend:
+        condition: service_healthy
+    environment:
+      CISO_ASSISTANT_URL: "http://ciso-backend:8000"
+      CISO_ADMIN_EMAIL: "${CISO_ADMIN_EMAIL:-admin@pyramidions.com}"
+      CISO_ADMIN_PASSWORD: "${CISO_ADMIN_PASSWORD:-changeme}"
+      CISO_PROJECT_NAME: "AWS ISO 27001 Toolkit"
+      DEDUP_DB_PATH: "/data/glue/dedup_cache.db"
+      WEBHOOK_PORT: "9000"
+      WAZUH_ALERT_THRESHOLD: "${WAZUH_ALERT_THRESHOLD:-7}"
+      LOG_LEVEL: "${GLUE_LOG_LEVEL:-INFO}"
+      # Alerting (email via SNS)
+      ALERT_ENABLED: "${ALERT_ENABLED:-true}"
+      ALERT_MIN_SEVERITY: "${ALERT_MIN_SEVERITY:-medium}"
+      SNS_TOPIC_ARN: "${SNS_TOPIC_ARN:-}"
+      AWS_REGION: "${AWS_REGION:-ap-south-1}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
+      AWS_SESSION_TOKEN: "${AWS_SESSION_TOKEN:-}"
+      CISO_DASHBOARD_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+    volumes:
+      - glue-data:/data/glue
+    expose:
+      - "9000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/')\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - toolkit-net
+
+  # ============================================================
+  # WAZUH — SIEM / Endpoint Monitoring
+  # ============================================================
+  wazuh-indexer:
+    image: opensearchproject/opensearch:2.18.0
+    container_name: wazuh-indexer
+    restart: unless-stopped
+    environment:
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      bootstrap.memory_lock: "true"
+      discovery.type: "single-node"
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - wazuh-indexer-data:/var/lib/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - toolkit-net
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.10.2
+    container_name: wazuh-manager
+    restart: unless-stopped
+    depends_on:
+      wazuh-indexer:
+        condition: service_healthy
+      glue-webhook:
+        condition: service_healthy
+    platform: linux/amd64
+    environment:
+      INDEXER_URL: "http://wazuh-indexer:9200"
+      INDEXER_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
+      INDEXER_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
+      API_USERNAME: "wazuh-wui"
+      API_PASSWORD: "${WAZUH_API_PASSWORD:-changeme}"
+    volumes:
+      - wazuh-manager-etc:/var/ossec/etc
+      - wazuh-manager-data:/var/ossec/data
+      - wazuh-manager-logs:/var/ossec/logs
+      - ./wazuh/wazuh-docker/ossec.conf:/tmp/custom-ossec.conf:ro
+      - ./wazuh/wazuh-docker/local_rules.xml:/tmp/custom-local_rules.xml:ro
+      - ./wazuh/wazuh-docker/webhook-integration.sh:/var/ossec/integrations/custom-webhook-integration.sh:ro
+    ports:
+      - "1514:1514"
+      - "1515:1515"
+      - "514:514/udp"
+      - "55000:55000"
+    healthcheck:
+      test: ["CMD-SHELL", "/var/ossec/bin/wazuh-control status | grep -q 'is running' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - toolkit-net
+
+  wazuh-dashboard:
+    image: opensearchproject/opensearch-dashboards:2.18.0
+    container_name: wazuh-dashboard
+    restart: unless-stopped
+    depends_on:
+      wazuh-indexer:
+        condition: service_healthy
+    environment:
+      OPENSEARCH_HOSTS: '["http://wazuh-indexer:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "${WAZUH_DASHBOARD_PORT:-5601}:5601"
+    networks:
+      - toolkit-net
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  prowler-output:
+  ciso-db-data:
+  ciso-backend-data:
+  glue-data:
+  wazuh-indexer-data:
+  wazuh-manager-etc:
+  wazuh-manager-data:
+  wazuh-manager-logs:
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  toolkit-net:
+    driver: bridge

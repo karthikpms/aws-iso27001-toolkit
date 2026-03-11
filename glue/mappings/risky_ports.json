@@ -1,0 +1,30 @@
+{
+  "description": "Ports that should never be open to 0.0.0.0/0 or ::/0. Used by network_monitor.py to detect risky security group rules.",
+  "iso_controls": ["A.8.20", "A.8.21"],
+  "risky_ports": {
+    "22": "SSH",
+    "3389": "RDP",
+    "3306": "MySQL",
+    "5432": "PostgreSQL",
+    "27017": "MongoDB",
+    "6379": "Redis",
+    "9200": "Elasticsearch",
+    "11211": "Memcached",
+    "1433": "MSSQL",
+    "1521": "Oracle DB",
+    "5900": "VNC",
+    "23": "Telnet",
+    "445": "SMB",
+    "135": "RPC",
+    "2049": "NFS"
+  },
+  "auto_remediate": false,
+  "alert_on_any_0000_rule": false,
+  "flow_log_analysis": {
+    "enabled": true,
+    "schedule": "weekly",
+    "unusual_outbound_threshold_gb": 10,
+    "unexpected_ports": [4444, 5555, 6666, 8888, 9999, 1234, 31337],
+    "lookback_days": 7
+  }
+}
