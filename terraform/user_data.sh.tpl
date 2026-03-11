@@ -12,10 +12,33 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/doc
 chmod a+r /etc/apt/keyrings/docker.asc
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
 apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin unzip wget
+
+echo "=== [$(date)] Installing AWS CLI v2 ==="
+curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+cd /tmp && unzip -qo awscliv2.zip && ./aws/install
 
 echo "=== [$(date)] Formatting and mounting data volume ==="
+# On NVMe instances, /dev/xvdf maps to /dev/nvme1n1
 DEVICE="${device_name}"
+if [ ! -b "$DEVICE" ]; then
+  # Try NVMe device naming
+  for dev in /dev/nvme1n1 /dev/nvme2n1; do
+    if [ -b "$dev" ]; then
+      DEVICE="$dev"
+      break
+    fi
+  done
+fi
+
+# Wait up to 60s for the volume to appear
+WAIT=0
+while [ ! -b "$DEVICE" ] && [ $WAIT -lt 60 ]; do
+  echo "Waiting for $DEVICE..."
+  sleep 5
+  WAIT=$((WAIT + 5))
+done
+
 # Only format if the volume has no filesystem
 if ! blkid "$DEVICE" > /dev/null 2>&1; then
   mkfs.ext4 "$DEVICE"
