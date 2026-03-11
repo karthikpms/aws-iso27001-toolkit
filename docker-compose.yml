@@ -89,8 +89,6 @@ services:
     environment:
       PUBLIC_BACKEND_API_URL: "http://ciso-backend:8000/api"
       PUBLIC_BACKEND_API_EXPOSED_URL: "${CISO_ASSISTANT_URL:-http://localhost:8443}/api"
-      PROTOCOL_HEADER: "x-forwarded-proto"
-      HOST_HEADER: "x-forwarded-host"
       ORIGIN: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
     ports:
       - "${CISO_ASSISTANT_PORT:-8443}:3000"
