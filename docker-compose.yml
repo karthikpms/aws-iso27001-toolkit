@@ -89,9 +89,32 @@ services:
     environment:
       PUBLIC_BACKEND_API_URL: "http://ciso-backend:8000/api"
       PUBLIC_BACKEND_API_EXPOSED_URL: "${CISO_ASSISTANT_URL:-http://localhost:8443}/api"
+      PROTOCOL_HEADER: "x-forwarded-proto"
+      HOST_HEADER: "x-forwarded-host"
       ORIGIN: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
+    networks:
+      - toolkit-net
+
+  # ============================================================
+  # CADDY — Reverse Proxy with auto-SSL
+  # ============================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      - ciso-frontend
+      - wazuh-dashboard
+    environment:
+      CISO_DOMAIN: "${CISO_DOMAIN:-localhost}"
+      WAZUH_DOMAIN: "${WAZUH_DOMAIN:-localhost}"
     ports:
-      - "${CISO_ASSISTANT_PORT:-8443}:3000"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
     networks:
       - toolkit-net
 
@@ -263,6 +286,8 @@ volumes:
   ciso-db-data:
   ciso-backend-data:
   glue-data:
+  caddy-data:
+  caddy-config:
   wazuh-indexer-data:
   wazuh-manager-etc:
   wazuh-manager-data:

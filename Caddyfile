@@ -1,0 +1,7 @@
+{$CISO_DOMAIN:localhost} {
+	reverse_proxy ciso-frontend:3000
+}
+
+{$WAZUH_DOMAIN:localhost}:5601 {
+	reverse_proxy wazuh-dashboard:5601
+}

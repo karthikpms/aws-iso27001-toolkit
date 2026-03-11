@@ -65,22 +65,22 @@ resource "aws_security_group" "toolkit" {
     cidr_blocks = var.allowed_ssh_cidrs
   }
 
-  # CISO Assistant dashboard
+  # HTTPS (Caddy reverse proxy)
   ingress {
-    description = "CISO Assistant UI"
-    from_port   = 8443
-    to_port     = 8443
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = var.allowed_dashboard_cidrs
   }
 
-  # Wazuh Dashboard
+  # HTTP (Caddy — redirect to HTTPS + Let's Encrypt challenge)
   ingress {
-    description = "Wazuh Dashboard"
-    from_port   = 5601
-    to_port     = 5601
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = var.allowed_dashboard_cidrs
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Wazuh Agent communication (private ranges only)
