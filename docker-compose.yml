@@ -57,7 +57,7 @@ services:
     environment:
       DJANGO_DEBUG: "False"
       ALLOWED_HOSTS: "*"
-      CISO_ASSISTANT_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+      CISO_ASSISTANT_URL: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
       DB_HOST: ciso-db
       DB_PORT: "5432"
       POSTGRES_NAME: ciso_assistant
@@ -86,10 +86,10 @@ services:
         condition: service_healthy
     environment:
       PUBLIC_BACKEND_API_URL: "http://ciso-backend:8000/api"
-      PUBLIC_BACKEND_API_EXPOSED_URL: "http://localhost:${CISO_ASSISTANT_PORT:-8443}/api"
+      PUBLIC_BACKEND_API_EXPOSED_URL: "${CISO_ASSISTANT_URL:-http://localhost:8443}/api"
       PROTOCOL_HEADER: "x-forwarded-proto"
       HOST_HEADER: "x-forwarded-host"
-      ORIGIN: "http://localhost:${CISO_ASSISTANT_PORT:-8443}"
+      ORIGIN: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
     ports:
       - "${CISO_ASSISTANT_PORT:-8443}:3000"
     networks:
