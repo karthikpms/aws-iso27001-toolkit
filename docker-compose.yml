@@ -199,7 +199,7 @@ services:
   # WAZUH — SIEM / Endpoint Monitoring
   # ============================================================
   wazuh-indexer:
-    image: opensearchproject/opensearch:2.18.0
+    image: wazuh/wazuh-indexer:4.10.2
     container_name: wazuh-indexer
     restart: unless-stopped
     environment:
@@ -264,15 +264,21 @@ services:
       - toolkit-net
 
   wazuh-dashboard:
-    image: opensearchproject/opensearch-dashboards:2.18.0
+    image: wazuh/wazuh-dashboard:4.10.2
     container_name: wazuh-dashboard
     restart: unless-stopped
     depends_on:
       wazuh-indexer:
         condition: service_healthy
     environment:
-      OPENSEARCH_HOSTS: '["http://wazuh-indexer:9200"]'
-      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+      INDEXER_URL: "http://wazuh-indexer:9200"
+      INDEXER_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
+      INDEXER_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
+      WAZUH_API_URL: "https://wazuh-manager"
+      API_USERNAME: "wazuh-wui"
+      API_PASSWORD: "${WAZUH_API_PASSWORD:-changeme}"
+      DASHBOARD_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
+      DASHBOARD_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
     ports:
       - "${WAZUH_DASHBOARD_PORT:-5601}:5601"
     networks:
