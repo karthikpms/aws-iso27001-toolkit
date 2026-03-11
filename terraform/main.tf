@@ -911,7 +911,7 @@ resource "aws_athena_workgroup" "toolkit" {
       output_location = "s3://${aws_s3_bucket.athena_results.id}/athena-results/"
 
       encryption_configuration {
-        encryption_option = "SSE_KMS"
+        encryption_option = "SSE_S3"
       }
     }
 
