@@ -5,4 +5,5 @@ opensearch.ssl.verificationMode: none
 opensearch_security.multitenancy.enabled: false
 opensearch_security.readonly_mode.roles: ["kibana_read_only"]
 opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
+opensearch_security.auth.anonymous_auth_enabled: true
 uiSettings.overrides.defaultRoute: /app/wz-home
