@@ -278,6 +278,8 @@ services:
       API_PASSWORD: "${WAZUH_API_PASSWORD:-changeme}"
       DASHBOARD_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
       DASHBOARD_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
+    volumes:
+      - ./wazuh/dashboard-config/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml:ro
     ports:
       - "${WAZUH_DASHBOARD_PORT:-5601}:5601"
     networks:
