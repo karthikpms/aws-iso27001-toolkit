@@ -263,28 +263,15 @@ services:
       - toolkit-net
 
   wazuh-dashboard:
-    image: wazuh/wazuh-dashboard:4.10.2
+    image: opensearchproject/opensearch-dashboards:2.16.0
     container_name: wazuh-dashboard
     restart: unless-stopped
     depends_on:
       wazuh-indexer:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin remove securityDashboards --allow-root 2>/dev/null || true
-        /entrypoint.sh opensearch-dashboards
     environment:
-      INDEXER_URL: "http://wazuh-indexer:9200"
-      INDEXER_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
-      INDEXER_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
-      WAZUH_API_URL: "https://wazuh-manager"
-      API_USERNAME: "wazuh-wui"
-      API_PASSWORD: "${WAZUH_API_PASSWORD:-changeme}"
-      DASHBOARD_USERNAME: "${WAZUH_INDEXER_USERNAME:-admin}"
-      DASHBOARD_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecretPassword}"
-    volumes:
-      - ./wazuh/dashboard-config/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml:ro
+      OPENSEARCH_HOSTS: '["http://wazuh-indexer:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
     ports:
       - "${WAZUH_DASHBOARD_PORT:-5601}:5601"
     networks:
