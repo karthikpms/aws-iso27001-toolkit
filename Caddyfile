@@ -3,5 +3,9 @@
 }
 
 {$WAZUH_DOMAIN:localhost} {
-	reverse_proxy wazuh-dashboard:5601
+	reverse_proxy wazuh-dashboard:5601 {
+		flush_interval -1
+		header_up Host {upstream_hostport}
+		header_up Accept-Encoding identity
+	}
 }
