@@ -58,6 +58,8 @@ services:
       DJANGO_DEBUG: "False"
       ALLOWED_HOSTS: "*"
       CISO_ASSISTANT_URL: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
+      CSRF_TRUSTED_ORIGINS: "${CISO_ASSISTANT_URL:-http://localhost:8443}"
+      SESSION_COOKIE_DOMAIN: ""
       DB_HOST: ciso-db
       DB_PORT: "5432"
       POSTGRES_NAME: ciso_assistant
