@@ -25,7 +25,7 @@ python3 -c "
 import sys, json
 s = json.load(sys.stdin)
 for k, v in s.items():
-    print(f'{k.upper()}={v}')
+    print(f\"{k.upper()}='{v}'\")
 " <<< "$SECRET" > /run/toolkit/.env
 
 # Append non-secret configuration
